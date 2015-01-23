@@ -80,8 +80,17 @@ class sale_order(osv.osv):
         return val
 
     def _amount_all(self, cr, uid, ids, field_name, arg, context=None):
-        cur_obj = self.pool.get('res.currency')
-        res = super(sale_order, self)._amount_all(cr, uid, ids, field_name, arg, context=context)
+        cur_pool = self.pool.get('res.currency')
+        res = dict([(sale.id, {'amount_physical': cur_pool.round(cr, uid, sale.pricelist_id.currency_id, sum(
+                [line.price_subtotal for line in sale.order_line if line.product_id.type != "service"]
+            ))}) for sale in self.browse(cr, uid, ids, context=context)])
+
+        if field_name == 'amount_physical':
+            return res
+
+        res2 = super(sale_order, self)._amount_all(cr, uid, ids, field_name, arg, context=context)
+        for sale_id in ids:
+            res[sale_id] = dict(res.get(sale_id, {}).items() + res2.get(sale_id, {}).items())
 
         for order in self.browse(cr, uid, ids, context=context):
             cur = order.pricelist_id.currency_id
@@ -90,20 +99,21 @@ class sale_order(osv.osv):
 
             if tax_ids:
                 val = self._amount_shipment_tax(cr, uid, tax_ids, order.shipcharge)
-                res[order.id]['amount_tax'] += cur_obj.round(cr, uid, cur, val)
+                res[order.id]['amount_tax'] += cur_pool.round(cr, uid, cur, val)
 
-            methods = None
+            ship_methods = None
             if not order.ship_method_id:
-                methods = self._get_ship_methods(
-                    cr, uid, order.recipient_country_id.id, res[order.id]['amount_untaxed']
+                ship_methods = self._get_ship_methods(
+                    cr, uid, order.recipient_country_id.id,
+                    res[order.id]['amount_untaxed'], res[order.id]['amount_physical']
                 )
 
-            if methods:
-                order.shipcharge = self._get_ship_charge(cr, uid, methods[0], order.id, context=context)
+            if ship_methods:
+                order.shipcharge = self._get_ship_charge(cr, uid, ship_methods[0], order.id, context=context)
                 self.write(
                     cr, uid, order.id, {
                         "shipcharge": order.shipcharge,
-                        "ship_method_id": methods[0].id
+                        "ship_method_id": ship_methods[0].id
                     }, context=context
                 )
 
@@ -117,7 +127,7 @@ class sale_order(osv.osv):
 
         for sale_obj in self.browse(cr, uid, ids):
             methods[sale_obj.id] = [m.id for m in self._get_ship_methods(
-                cr, uid, sale_obj.recipient_country_id.id, sale_obj.amount_total,
+                cr, uid, sale_obj.recipient_country_id.id, sale_obj.amount_total, sale_obj.amount_physical,
                 ratecards=todays_ratecards, context=context
             )]
 
@@ -132,7 +142,7 @@ class sale_order(osv.osv):
                       '|', ('to_date', '>', today), ('to_date', '=', None)], context=context
         ), context=context)
 
-    def _get_ship_methods(self, cr, uid, country_id, amount_total, ratecards=None, context=None):
+    def _get_ship_methods(self, cr, uid, country_id, amount_total, physical_total, ratecards=None, context=None):
         rate_pool = self.pool.get('shipping.rate')
 
         if ratecards is None:
@@ -141,9 +151,12 @@ class sale_order(osv.osv):
         method_objs = rate_pool.browse(cr, uid, rate_pool.search(cr, uid, [
             '|', ('country_id', '=', country_id), ('country_id', '=', None),
             '|', '|', ('to_price', '>=', amount_total), ('to_price', '=', 0.0), ('to_price', '=', None),
-            ('from_price', '<=', amount_total), '|', ('id', 'in', [r.id for t in ratecards for r in t.rate_ids]),
-            ('card_id', '=', None)
-        ], order='country_id, to_price', context=context), context=context)
+                      ('from_price', '<=', amount_total),
+            '|', '|', ('to_price_physical', '>=', physical_total), ('to_price_physical', '=', 0.0),
+                      ('to_price_physical', '=', None),
+                      ('from_price_physical', '<=', physical_total),
+            '|', ('id', 'in', [r.id for t in ratecards for r in t.rate_ids]), ('card_id', '=', None)
+        ], order='country_id, charge, to_price_physical, to_price', context=context), context=context)
 
         methods = []
         seen_methods = []
@@ -179,6 +192,12 @@ class sale_order(osv.osv):
                 'sale.order.line': (_get_order, ['price_unit', 'tax_id', 'discount', 'product_uom_qty'], 10),
                 },
                 multi='sums', help="The tax amount."),
+        'amount_physical': fields.function(_amount_all, method=True, digits_compute= dp.get_precision('Sale Price'), string='Total',
+            store = {
+                'sale.order': (lambda self, cr, uid, ids, c={}: ids, ['order_line', 'ship_method_id', 'shipcharge'], 10),
+                'sale.order.line': (_get_order, ['price_unit', 'tax_id', 'discount', 'product_uom_qty'], 10),
+                },
+                multi='sums', help="The total amount."),
         'amount_total': fields.function(_amount_all, method=True, digits_compute= dp.get_precision('Sale Price'), string='Total',
             store = {
                 'sale.order': (lambda self, cr, uid, ids, c={}: ids, ['order_line', 'ship_method_id', 'shipcharge'], 10),
@@ -193,9 +212,16 @@ class sale_order(osv.osv):
         if "value" not in res:
             res["value"] = {}
 
+        sale_total = 0.0
+        physical_total = 0.0
+
+        if ids:
+            sale = self.browse(cr, uid, ids[0], context=context)
+            sale_total = sale.amount_untaxed
+            physical_total = sale.amount_physical
+
         partner = self.pool.get("res.partner").browse(cr, uid, partner_id, context=context)
-        sale_total = self.browse(cr, uid, ids[0], context=context).amount_untaxed if ids else 0
-        methods = self._get_ship_methods(cr, uid, partner.country_id.id, sale_total)
+        methods = self._get_ship_methods(cr, uid, partner.country_id.id, sale_total, physical_total)
 
         if not methods:
             return res

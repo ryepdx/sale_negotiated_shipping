@@ -72,8 +72,10 @@ class shipping_rate(osv.osv):
     _description = "Shipping Calculation Table"
     _columns = {
         'name': fields.related('card_id', 'name', type='char', string="Name", store=True),
-        'from_price': fields.float('From Price', required=True),
-        'to_price': fields.float('To Price', required=False),
+        'from_price': fields.float('From Price (incl. services)', required=True),
+        'to_price': fields.float('To Price (incl. services)', required=False),
+        'from_price_physical': fields.float('From Price (excl. services)', required=True),
+        'to_price_physical': fields.float('To Price (excl. services)', required=False),
         'charge': fields.float('Flate Rate', required=True),
         'percentage': fields.float('Percentage Rate', required=True),
         'country_id': fields.many2one('res.country', 'Country'),
@@ -81,7 +83,7 @@ class shipping_rate(osv.osv):
     }
     _defaults = {
         'from_price': 0.0,
-        'to_price': 0.0,
+        'from_price_physical': 0.0,
         'charge': 0,
         'percentage': 0
     }
@@ -98,11 +100,14 @@ class shipping_rate(osv.osv):
             table_ids = table_pool.search(cr, uid, [
                 ('card_id', '=', config_obj.rate_card_id.id),
                 '|', ('country_id', '=', address.country_id.id), ('country_id', '=', None),
-                '|', '|', ('to_price', '>', model_obj.amount_total), ('to_price', '=', 0.0), ('to_price', '=', None),
-                ('from_price', '<=', model_obj.amount_total)
+                '|', '|', ('to_price', '>=', model_obj.amount_total), ('to_price', '=', 0.0), ('to_price', '=', None),
+                      ('from_price', '<=', model_obj.amount_total),
+                '|', '|', ('to_price_physical', '>=', model_obj.amount_physical), ('to_price_physical', '=', 0.0),
+                      ('to_price_physical', '=', None),
+                      ('from_price_physical', '<=', model_obj.amount_physical),
             ], order=['country_id', 'to_price'], context=context)
 
-            if  table_ids:
+            if table_ids:
                 return table_pool.browse(cr, uid, table_ids[0], context=context)
 
             logger = logging.getLogger(__name__)
