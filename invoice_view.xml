@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+
+		<!--Invoice Form -->
+	   	<record id="invoice_form_inherit_1" model="ir.ui.view">
+			<field name="name">account.invoice.form.inherit</field>
+			<field name="model">account.invoice</field>
+			<field name="inherit_id" ref="account.invoice_form"/>
+			<field name="arch" type="xml">
+			     <xpath expr="//field[@name='amount_untaxed']" position="before">
+					<field name="total_weight_net"/>
+					<field name="shipcharge"/>
+					<field name="ship_method_id"/>
+				</xpath>     
+				<xpath expr="//button[@name='button_reset_taxes']" position="replace">
+					<button colspan="1" name="button_reset_taxes" states="draft" string="Compute Taxes" type="object" 
+                    		groups="base.group_user" icon="terp-stock_format-scientific"/>
+				</xpath>
+				<xpath expr="//field[@name='amount_untaxed']" position="replace">
+					<field name="amount_untaxed" string="Net Total"/>
+				</xpath>
+				<xpath expr="//field[@name='product_id']" position="after">
+                    <field name="weight_net"/>
+                </xpath>
+			</field>
+		</record>
+		
+		<record id="invoice_supplier_form_inherit_1" model="ir.ui.view">
+			<field name="name">account.invoice.supplier.form.inherit</field>
+			<field name="model">account.invoice</field>
+			<field name="inherit_id" ref="account.invoice_supplier_form"/>
+			<field name="arch" type="xml">
+                <xpath expr="//page[@string='Invoice']/group" position="replace">
+					<group class="oe_subtotal_footer oe_right">
+                        <group col="2" colspan="2">
+                            <field name="valid_shipping_methods" invisible="1"/>
+        					<field name="amount_untaxed" string="Net Total"/>
+                            <field name="total_weight_net" />
+                            <field name="shipcharge" on_change="onchange_update_total(shipcharge, amount_untaxed, amount_tax)" string="Freight Cost" help="The shipping charge on this order."/>
+                            <field name="ship_method_id" invisible="1" />
+                            <div>
+                                <label for="amount_tax"/>
+                                <button colspan="1" name="button_reset_taxes" states="draft" string="Compute Taxes" type="object"
+							            groups="base.group_user" icon="terp-stock_format-scientific"/>
+                            </div>
+                            <field name="amount_tax" nolabel="1" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="amount_total" class="oe_subtotal_footer_separator" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="residual" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="reconciled" invisible="1"/>
+                            <field name="recipient_country_id" invisible="1"/>
+                            <field name="sale_account_id" invisible="1"/>
+                            <button name="%(sale.action_view_sale_advance_payment_inv)d" string="Advance Invoice"
+                                type="action" icon="gtk-execute" states="draft,manual" groups="base.group_extended"/>
+                        </group>
+					</group>
+				</xpath>
+			</field>
+		</record>
+	</data>
+</openerp>

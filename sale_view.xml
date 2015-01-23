@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+		<record id="view_sale_order_inherit_1" model="ir.ui.view">
+			<field name="name">view_sale_order_inherit_1</field>
+			<field name="model">sale.order</field>
+			<field name="inherit_id" ref="sale.view_order_form"/>
+			<field name="arch" type="xml">
+				<xpath expr="//form/sheet/notebook/page/group[@name='sale_total']" position="replace">
+					<group col="6" colspan="4" name="sale_total">
+					<button name="button_dummy" states="draft" string="Compute" type="object" icon="gtk-execute" colspan="2"/>
+					<group col="2" colspan="2">
+					    <field name="ship_method_id" on_change="onchange_ship_method(ship_method_id)"/>
+                        <field name="valid_shipping_methods" invisible="1"/>
+						<field name="amount_untaxed" context="{'country_id': recipient_country_id, 'amount_untaxed': amount_untaxed}" sum="Net Total" string="Net Total"/>
+						<field name="shipcharge" on_change="onchange_update_total(shipcharge, amount_untaxed, amount_tax)" help="The shipping charge on this order."/>
+						<field name="amount_tax"/>
+						<field name="amount_total"/>
+                        <field name="recipient_country_id" invisible="1"/>
+						<field name="sale_account_id" invisible="1"/>
+						<button name="%(sale.action_view_sale_advance_payment_inv)d" string="Advance Invoice"
+							type="action" icon="gtk-execute" states="draft,manual" groups="base.group_extended"/>
+					</group>
+					</group>
+				</xpath>
+			</field>
+		</record>
+	</data>
+</openerp>
