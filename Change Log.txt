@@ -5,6 +5,8 @@
 Version 3.0 (07-11-2015) by RyePDX LLC
     * Simplified module and got rid of a lot of fields, particularly zones.
       (Backwards-incompatible and very specific to my client's needs.)
+    * Added ability to differentiate sale total and portion of sale total owed
+      to the sale of physical products when calculating shipping rates.
 
 Version 2.5 (07-11-2013) by Serpent Consulting Services Pvt. Ltd.
 	* Correction of code for invoice validation on SO confirmation
