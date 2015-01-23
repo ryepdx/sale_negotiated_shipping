@@ -31,7 +31,7 @@
     'website': ' http://www.novapointgroup.com',
     'depends': ['sale','stock'],
     'data': [
-       'sale_negotiated_shipping_view.xml' ,
+       'sale_negotiated_shipping_view.xml',
        'wizard/shipping_rate_view.xml',
        'sale_view.xml',
        'stock_view.xml',
