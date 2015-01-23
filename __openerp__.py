@@ -23,7 +23,7 @@
 
 {
     'name': 'Sale Negotiated Shipping',
-    'version': '2.5',
+    'version': '3.0',
     'category': 'Generic Modules/Logistics Management',
     'description': """
     """,
