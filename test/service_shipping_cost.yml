@@ -1,0 +1,165 @@
+-
+  Create a shipping rate card for cheap, expensive, and free shipping...
+-
+  !record {model: shipping.rate.card, id: shipping_rate_card_1}:
+    from_date: '2000-01-01 00:00:00'
+    name: UPS Standard
+    to_date: '2100-01-01 00:00:00'
+
+-
+  Create an expensive shipping rate...
+-
+  !record {model: shipping.rate, id: shipping_rate_expensive}:
+    charge: 100.0
+    from_price: 0
+    to_price: 100
+    from_price_physical: 50
+    to_price_physical: 100
+    card_id: shipping_rate_card_1
+
+-
+  ...a cheap shipping rate...
+-
+  !record {model: shipping.rate, id: shipping_rate_cheap}:
+    charge: 10.0
+    from_price: 0
+    to_price: 100
+    from_price_physical: 0
+    to_price_physical: 50
+    card_id: shipping_rate_card_1
+
+
+-
+  ...and a free shipping rate...
+-
+  !record {model: shipping.rate, id: shipping_rate_free}:
+    charge: 0.0
+    from_price: 100
+    from_price_physical: 0
+    card_id: shipping_rate_card_1
+
+-
+  Create a physical product.
+-
+  !record {model: product.product, id: physical_product}:
+            name: "Physical Product"
+            default_code: "PHYS"
+            categ_id: product.product_category_3
+            list_price: 48.0
+            standard_price: 5.0
+            type: "consu"
+            uom_id: product.product_uom_unit
+            uom_po_id: product.product_uom_unit
+            description_sale: "A physical product."
+
+-
+  Create a service product.
+-
+  !record {model: product.product, id: service_product}:
+            name: "Intangible Product"
+            default_code: "SERV"
+            categ_id: product.product_category_3
+            list_price: 26.0
+            standard_price: 5.0
+            type: "service"
+            uom_id: product.product_uom_unit
+            uom_po_id: product.product_uom_unit
+            description_sale: "An intangible product, like a download."
+
+-
+  Create a sale eligible for cheap shipping only if the cost of service products aren't used to calculate shipping.
+-
+  !record {model: sale.order, id: test_sale_order_cheap}:
+    name: "Test Cheap SO"
+    company_id: base.main_company
+    partner_id: base.main_partner
+    partner_invoice_id: base.main_partner
+    partner_shipping_id: base.main_partner
+    shop_id: sale.sale_shop_1
+    pricelist_id: product.list0
+
+-
+  Sale needs a physical product...
+-
+  !record {model: sale.order.line, id: test_sale_order_cheap_line1}:
+    order_id: test_sale_order_cheap
+    name: "Physical Product"
+    product_id: physical_product
+    product_uom_qty: 1
+    product_uos_qty: 1
+    product_uom: product.product_uom_unit
+    price_unit: 48.0
+    delay: 0
+
+-
+  ...and a service product.
+-
+  !record {model: sale.order.line, id: test_sale_order_cheap_line2}:
+    order_id: test_sale_order_cheap
+    name: "Intangible Product"
+    product_id: service_product
+    product_uom_qty: 1
+    product_uos_qty: 1
+    product_uom: product.product_uom_unit
+    price_unit: 26.0
+    delay: 0
+
+-
+  Make sure the shipping cost is cheap, not expensive.
+-
+  !python {model: sale.order}: |
+    self.action_button_confirm(cr, uid, [ref('test_sale_order_cheap')], context=context)
+    sale = self.browse(cr, uid, ref('test_sale_order_cheap'), context=context)
+    assert len(sale.valid_shipping_methods) == 1, "More than one shipping method is valid when only one should be!"
+    assert sale.valid_shipping_methods[0].id == ref('shipping_rate_cheap'), "Not using 'cheap' shipping method!"
+
+-
+  Create a sale eligible for free shipping only if the cost of service products *are* used to calculate shipping.
+-
+  !record {model: sale.order, id: test_sale_order_free}:
+    name: "Test Free SO"
+    company_id: base.main_company
+    partner_id: base.main_partner
+    partner_invoice_id: base.main_partner
+    partner_shipping_id: base.main_partner
+    shop_id: sale.sale_shop_1
+    pricelist_id: product.list0
+
+-
+  Sale needs a physical product...
+-
+  !record {model: sale.order.line, id: test_sale_order_free_line1}:
+    order_id: test_sale_order_free
+    name: "Physical Product"
+    product_id: physical_product
+    product_uom_qty: 1
+    product_uos_qty: 1
+    product_uom: product.product_uom_unit
+    price_unit: 48.0
+    delay: 0
+
+-
+  ...and a service product.
+-
+  !record {model: sale.order.line, id: test_sale_order_free_line2}:
+    order_id: test_sale_order_free
+    name: "Intangible Product"
+    product_id: service_product
+    product_uom: product.product_uom_unit
+    price_unit: 26.0
+    delay: 0
+
+-
+  Make that two service products. (Setting field upon creation does not work for some reason.)
+-
+  !record {model: sale.order.line, id: test_sale_order_free_line2}:
+    product_uom_qty: 2
+
+-
+  Make sure shipping is free.
+-
+  !python {model: sale.order}: |
+    self.action_button_confirm(cr, uid, [ref('test_sale_order_free')], context=context)
+    sale = self.browse(cr, uid, ref('test_sale_order_free'), context=context)
+    assert len(sale.valid_shipping_methods) == 1, "More than one shipping method is valid when only one should be!"
+    assert sale.valid_shipping_methods[0].id == ref('shipping_rate_free'), "Not using 'free' shipping method!"

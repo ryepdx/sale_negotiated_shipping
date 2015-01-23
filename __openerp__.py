@@ -39,7 +39,7 @@
        'invoice_view.xml'
     ],
     'demo': [],
-    'test': ['test/account_invoice.yml','test/sale_negotiated_shipping.yml'],
+    'test': ['test/account_invoice.yml','test/sale_negotiated_shipping.yml', 'test/service_shipping_cost.yml'],
     'installable': True,
     'active': False,
 }
