@@ -27,9 +27,9 @@
     'category': 'Generic Modules/Logistics Management',
     'description': """
     """,
-    'author': 'NovaPoint Group LLC',
-    'website': ' http://www.novapointgroup.com',
-    'depends': ['sale','stock'],
+    'author': ['NovaPoint Group LLC', 'RyePDX LLC'],
+    'website': ['http://www.novapointgroup.com', 'http://ryepdx.com/'],
+    'depends': ['sale', 'stock', 'sale_stock'],
     'data': [
        'sale_negotiated_shipping_view.xml',
        'wizard/shipping_rate_view.xml',
