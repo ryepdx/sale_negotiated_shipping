@@ -11,10 +11,9 @@
 -
   !record {model: shipping.rate, id: shipping_rate_expensive}:
     charge: 100.0
-    from_price: 0
+    from_price: 50
     to_price: 100
-    from_price_physical: 50
-    to_price_physical: 100
+    physical_only: True
     card_id: shipping_rate_card_1
 
 -
@@ -23,9 +22,8 @@
   !record {model: shipping.rate, id: shipping_rate_cheap}:
     charge: 10.0
     from_price: 0
-    to_price: 100
-    from_price_physical: 0
-    to_price_physical: 50
+    to_price: 50
+    physical_only: True
     card_id: shipping_rate_card_1
 
 
@@ -35,7 +33,7 @@
   !record {model: shipping.rate, id: shipping_rate_free}:
     charge: 0.0
     from_price: 100
-    from_price_physical: 0
+    physical_only: False
     card_id: shipping_rate_card_1
 
 -

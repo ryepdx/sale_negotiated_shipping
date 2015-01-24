@@ -15,8 +15,7 @@
 					<field name="card_id" string="Name"/>
 					<field name="from_price"/>
 					<field name="to_price"/>
-                    <field name="from_price_physical"/>
-					<field name="to_price_physical"/>
+                    <field name="physical_only"/>
 					<field name="charge"/>
                     <field name="percentage"/>
 					<field name="country_id"/>
@@ -36,8 +35,7 @@
 						<newline/>
 						<field name="from_price" select="1" colspan="1"/>
 						<field name="to_price" select="1" colspan="1"/>
-                        <field name="from_price_physical" select="1" colspan="1"/>
-						<field name="to_price_physical" select="1" colspan="1"/>
+                        <field name="physical_only"/>
 						<newline/>
 						<field name="charge" select="1" colspan="1"/>
                         <newline/>

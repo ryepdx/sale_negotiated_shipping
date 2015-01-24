@@ -142,7 +142,7 @@ class sale_order(osv.osv):
                       '|', ('to_date', '>', today), ('to_date', '=', None)], context=context
         ), context=context)
 
-    def _get_ship_methods(self, cr, uid, country_id, amount_total, physical_total, ratecards=None, context=None):
+    def _get_ship_methods(self, cr, uid, country_id, amount_total, amount_physical, ratecards=None, context=None):
         rate_pool = self.pool.get('shipping.rate')
 
         if ratecards is None:
@@ -150,13 +150,14 @@ class sale_order(osv.osv):
 
         method_objs = rate_pool.browse(cr, uid, rate_pool.search(cr, uid, [
             '|', ('country_id', '=', country_id), ('country_id', '=', None),
-            '|', '|', ('to_price', '>=', amount_total), ('to_price', '=', 0.0), ('to_price', '=', None),
-                      ('from_price', '<=', amount_total),
-            '|', '|', ('to_price_physical', '>=', physical_total), ('to_price_physical', '=', 0.0),
-                      ('to_price_physical', '=', None),
-                      ('from_price_physical', '<=', physical_total),
+            '|',
+                '&', '&', '|', '|', ('to_price', '>=', amount_total), ('to_price', '=', 0.0), ('to_price', '=', None),
+                      ('from_price', '<=', amount_total), ('physical_only', '=', 0),
+                '&', '&', '|', '|', ('to_price', '>=', amount_physical), ('to_price', '=', 0.0),
+                      ('to_price', '=', None),
+                      ('from_price', '<=', amount_physical), ('physical_only', '=', 1),
             '|', ('id', 'in', [r.id for t in ratecards for r in t.rate_ids]), ('card_id', '=', None)
-        ], order='country_id, charge, to_price_physical, to_price', context=context), context=context)
+        ], order='country_id, charge, to_price', context=context), context=context)
 
         methods = []
         seen_methods = []
