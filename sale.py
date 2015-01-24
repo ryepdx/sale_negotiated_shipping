@@ -152,10 +152,10 @@ class sale_order(osv.osv):
             '|', ('country_id', '=', country_id), ('country_id', '=', None),
             '|',
                 '&', '&', '|', '|', ('to_price', '>=', amount_total), ('to_price', '=', 0.0), ('to_price', '=', None),
-                      ('from_price', '<=', amount_total), ('physical_only', '=', 0),
+                      ('from_price', '<=', amount_total), ('physical_only', '=', False),
                 '&', '&', '|', '|', ('to_price', '>=', amount_physical), ('to_price', '=', 0.0),
                       ('to_price', '=', None),
-                      ('from_price', '<=', amount_physical), ('physical_only', '=', 1),
+                      ('from_price', '<=', amount_physical), ('physical_only', '=', True),
             '|', ('id', 'in', [r.id for t in ratecards for r in t.rate_ids]), ('card_id', '=', None)
         ], order='country_id, charge, to_price', context=context), context=context)
 
