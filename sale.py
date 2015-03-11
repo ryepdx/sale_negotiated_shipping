@@ -36,17 +36,20 @@ class sale_order(osv.osv):
             result[line.order_id.id] = True
         return result.keys()
 
+    def _prepare_invoice(self, cr, uid, order, lines, context=None):
+        res = super(sale_order, self)._prepare_invoice(cr, uid, order, lines, context=context)
+        res.update({
+            'shipcharge': order.shipcharge,
+            'ship_method_id': order.ship_method_id.id
+        })
+        if order.sale_account_id:
+            res['sale_account_id'] = order.sale_account_id.id
+        return res
+
     def _make_invoice(self, cr, uid, order, lines, context=None):
         inv_id = super(sale_order, self)._make_invoice(cr, uid, order, lines, context=None)
-        if inv_id:
-            if order.sale_account_id:
-                inv_obj = self.pool.get('account.invoice')
-                inv_obj.write(cr, uid, inv_id, {
-                    'shipcharge': order.shipcharge,
-                    'ship_method_id': order.ship_method_id.id,
-                    'sale_account_id': order.sale_account_id.id,
-                    })
-                inv_obj.button_reset_taxes(cr, uid, [inv_id], context=context)
+        if inv_id and order.sale_account_id:
+            self.pool.get("account.invoice").button_reset_taxes(cr, uid, [inv_id], context=context)
         return inv_id
 
     def _amount_shipment_tax(self, cr, uid, shipment_taxes, shipment_charge):
