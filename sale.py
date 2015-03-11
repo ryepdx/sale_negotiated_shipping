@@ -30,30 +30,6 @@ from openerp.osv import fields, osv
 class sale_order(osv.osv):
     _inherit = "sale.order"
 
-    def _amount_all(self, cr, uid, ids, field_name, arg, context=None):
-        cur_obj = self.pool.get('res.currency')
-        res = {}
-        for order in self.browse(cr, uid, ids, context=context):
-            res[order.id] = {
-                'amount_untaxed': 0.0,
-                'amount_tax': 0.0,
-                'amount_total': 0.0,
-            }
-
-            tax = subtotal = 0.0
-            cur = order.pricelist_id.currency_id
-            for line in order.order_line:
-                subtotal += line.price_subtotal
-                tax += self._amount_line_tax(cr, uid, line, context=context)
-
-            res[order.id]['amount_tax'] = cur_obj.round(cr, uid, cur, tax)
-            res[order.id]['amount_untaxed'] = cur_obj.round(cr, uid, cur, subtotal)
-            res[order.id]['amount_total'] = (res[order.id]['amount_untaxed'] + res[order.id]['amount_tax']
-                + res[order.id]['shipcharge'] + cur_obj.round(cr, uid, cur, context.get("shipcharge", order.shipcharge))
-            )
-
-        return res
-
     def _get_order(self, cr, uid, ids, context=None):
         result = {}
         for line in self.pool.get('sale.order.line').browse(cr, uid, ids, context=None):
