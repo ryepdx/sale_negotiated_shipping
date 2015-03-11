@@ -55,13 +55,6 @@ class account_invoice(osv.osv):
             val += c.get('amount', 0.0)
         return val
 
-    def _amount_all(self, cr, uid, ids, name, args, context=None):
-        res = super(account_invoice, self)._amount_all(cr, uid, ids, name, args, context=context)
-        for invoice in self.browse(cr, uid, ids, context=context):
-            if invoice.shipcharge:
-                res[invoice.id]['amount_total'] = res[invoice.id]['amount_untaxed'] + res[invoice.id]['amount_tax'] + invoice.shipcharge
-        return res
-
     def _get_invoice_tax(self, cr, uid, ids, context=None):
         invoice = self.pool.get('account.invoice')
         return super(account_invoice, invoice)._get_invoice_tax(cr, uid, ids, context=context)
@@ -141,6 +134,26 @@ class account_invoice(osv.osv):
                 move_lines.append((0, 0, lines2))
         return move_lines
 
+    def _amount_all(self, cr, uid, ids, field_name, arg, context=None):
+        cur_pool = self.pool.get('res.currency')
+        res = dict([(invoice.id, {'amount_physical': cur_pool.round(cr, uid, invoice.pricelist_id.currency_id, sum(
+                [line.price_subtotal for line in invoice.move_lines if line.product_id.type != "service"]
+            ))}) for invoice in self.browse(cr, uid, ids, context=context)])
+
+        if field_name == 'amount_physical':
+            return res
+
+        res2 = super(account_invoice, self)._amount_all(cr, uid, ids, field_name, arg, context=context)
+
+        for invoice_id in ids:
+            res[invoice_id] = dict(res.get(invoice_id, {}).items() + res2.get(invoice_id, {}).items())
+
+        for invoice in self.browse(cr, uid, ids, context=context):
+            res[invoice.id]['amount_total'] = (
+                res[invoice.id]['amount_untaxed'] + res[invoice.id]['amount_tax'] + invoice.shipcharge
+            )
+
+        return res
 
     def _get_invoice_ship_methods(self, cr, uid, ids, field_name, args, context=None):
         methods = {}
@@ -188,6 +201,13 @@ class account_invoice(osv.osv):
                 'account.invoice.tax': (_get_invoice_tax, None, -10),
                 'account.invoice.line': (_get_invoice_line, ['price_unit', 'invoice_line_tax_id', 'quantity', 'discount', 'invoice_id'], -10),
                 }, multi='sums', help="The tax amount."),
+        'amount_physical': fields.function(_amount_all, method=True, digits_compute= dp.get_precision('Sale Price'), string='Total',
+            store = {
+                'account.invoice': (lambda self, cr, uid, ids, c={}: ids, ['invoice_line','shipcharge'], -10),
+                'account.invoice.tax': (_get_invoice_tax, None, -10),
+                'account.invoice.line': (_get_invoice_line, ['price_unit', 'invoice_line_tax_id', 'quantity', 'discount', 'invoice_id'], -10),
+                },
+                multi='sums', help="The total physical amount."),
         'amount_total': fields.function(_amount_all, method=True, digits_compute=dp.get_precision('Account'), string='Total',
             store = {
                 'account.invoice': (lambda self, cr, uid, ids, c={}: ids, ['invoice_line','shipcharge'], -10),
