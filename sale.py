@@ -177,7 +177,7 @@ class sale_order(osv.osv):
                 'sale.order': (lambda self, cr, uid, ids, c={}: ids, ['order_line', 'ship_method_id', 'shipcharge'], 10),
                 'sale.order.line': (_get_order, ['price_unit', 'tax_id', 'discount', 'product_uom_qty'], 10),
                 },
-                multi='sums', help="The total amount."),
+                multi='sums', help="The total physical amount."),
         'amount_total': fields.function(_amount_all, method=True, digits_compute= dp.get_precision('Sale Price'), string='Total',
             store = {
                 'sale.order': (lambda self, cr, uid, ids, c={}: ids, ['order_line', 'ship_method_id', 'shipcharge'], 10),
