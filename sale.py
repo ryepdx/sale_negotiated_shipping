@@ -206,6 +206,9 @@ class sale_order(osv.osv):
                 },
                 multi='sums', help="The total amount.")
     }
+    defaults = {
+        'shipcharge': 0.0
+    }
 
     def onchange_partner_id(self, cr, uid, ids, partner_id, context=None):
         res = super(sale_order, self).onchange_partner_id(cr, uid, ids, partner_id, context=context) or {}

@@ -200,6 +200,9 @@ class account_invoice(osv.osv):
                 'account.invoice.line': (_get_invoice, ['quantity', 'product_id'], 10),
                 },help="The cumulated net weight of all the invoice lines."),
     }
+    defaults = {
+        "shipcharge": 0.0
+    }
 
     def onchange_update_total(self, cr, uid, ids, shipcharge, amount_untaxed, amount_tax):
         return {"value": {"amount_total": shipcharge + amount_untaxed + amount_tax}}
