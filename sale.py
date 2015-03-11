@@ -24,7 +24,7 @@
 import datetime
 from decimal import Decimal
 
-import decimal_precision as dp
+import openerp.addons.decimal_precision as dp
 from openerp.osv import fields, osv
 
 class sale_order(osv.osv):
