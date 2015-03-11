@@ -145,9 +145,10 @@ class account_invoice(osv.osv):
     def _get_invoice_ship_methods(self, cr, uid, ids, field_name, args, context=None):
         methods = {}
         todays_ratecards = self._get_todays_ratecards(cr, uid, context=context)
+        sale_pool = self.pool.get("sale.order")
 
         for invoice_obj in self.browse(cr, uid, ids):
-            methods[invoice_obj.id] = [m.id for m in self._get_ship_methods(
+            methods[invoice_obj.id] = [m.id for m in sale_pool._get_ship_methods(
                 cr, uid, invoice_obj.recipient_country_id.id, invoice_obj.amount_total,
                 ratecards=todays_ratecards, context=context
             )]
