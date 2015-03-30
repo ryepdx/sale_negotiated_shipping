@@ -136,7 +136,7 @@ class account_invoice(osv.osv):
 
     def _amount_all(self, cr, uid, ids, field_name, arg, context=None):
         cur_pool = self.pool.get('res.currency')
-        res = dict([(invoice.id, {'amount_physical': cur_pool.round(cr, uid, invoice.pricelist_id.currency_id, sum(
+        res = dict([(invoice.id, {'amount_physical': cur_pool.round(cr, uid, invoice.currency_id, sum(
                 [line.price_subtotal for line in invoice.move_lines if line.product_id.type != "service"]
             ))}) for invoice in self.browse(cr, uid, ids, context=context)])
 
